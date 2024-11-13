@@ -1,5 +1,6 @@
 from serial import *
 import time
+import binascii
 
 def check_ports(): # skibidi skibidi hawk tuah hawk
     ports = []
@@ -33,7 +34,25 @@ def recordBots(data):
             recordBot = False
             atChar += 2
             continue
-
+        if (nameLength == ""):
+            atByte = data[atChar:atChar+2]
+            atIntByte = int(("0x" + atByte).decode("UTF-8"))
+            nameLength = atIntByte - 7
+            atByte = ""
+            atIntByte = 0
+            atChar += 2
+            continue
+        if (macType == ""):
+            macType = data[atChar:atChar + 12]
+            atChar += 12
+            continue
+        if name == "":
+            name = data[atChar:(atChar + nameLength * 2)]
+            byte_string = binascii.unhexlify(name)  
+            name = byte_string.decode("ASCII")  
+            atChar += nameLength * 2
+            temp = name # need to actually make the create robot classes
+            if (temp in 
 
 def scan(port_name, timeout):
     start_time = time.time()
