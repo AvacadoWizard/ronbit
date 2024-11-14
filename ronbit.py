@@ -2,59 +2,39 @@ from serial import *
 import time
 import binascii
 
-def check_ports(): # skibidi skibidi hawk tuah hawk
-    ports = []
-    for i in range(256):
-        ports.append("COM" + str(i)) 
-    result = []
+class ronbit:
+    def __init__(self):
+        # define a start variables
+        self.name = ""
+        self.name_length = ""
+        self.mac_type = ""
+        self.mac_address = ""
 
-    for port_name in ports:
+        # define port variable for connecting to serial device
+        self.port_name = ""
+
+    def set_port(self, port_name):
         try:
-            serial_port = Serial(port_name)
-            serial_port.close()
-            result.append(port_name)
+            self.port_name = port_name
+            port = Serial(port_name)
+            print("Succesfully set port!")
+            port.close()
         except:
+            print(f"Error: can not connect to port: {port_name}")
+
+    def connect(self, name, timeout=2):
+        discovered_bots = scan(self.port_name, timeout)
+        if (name in discovered_bots.keys()):
             pass
-    return result
+        else:
+            print("Error: ronbit not found :(")
+            return
+        
 
-def recordBots(data):
-    bots = []
-    recordBot = True
-    atChar = 0
-    maxChar = len(data)
-    atByte = ""
-    atIntByte = 0
-    nameLength = 0
-    macType = ""
-    macAddress = ""
-    name = ""
 
-    while (atChar < maxChar):
-        if (recordBot and data[atChar] == "0" and data[atChar + 1] == "0"):
-            recordBot = False
-            atChar += 2
-            continue
-        if (nameLength == ""):
-            atByte = data[atChar:atChar+2]
-            atIntByte = int(("0x" + atByte).decode("UTF-8"))
-            nameLength = atIntByte - 7
-            atByte = ""
-            atIntByte = 0
-            atChar += 2
-            continue
-        if (macType == ""):
-            macType = data[atChar:atChar + 12]
-            atChar += 12
-            continue
-        if name == "":
-            name = data[atChar:(atChar + nameLength * 2)]
-            byte_string = binascii.unhexlify(name)  
-            name = byte_string.decode("ASCII")  
-            atChar += nameLength * 2
-            temp = name # need to actually make the create robot classes
-            if (temp in 
 
-def scan(port_name, timeout):
+
+def scan(port_name, timeout = 2):
     start_time = time.time()
     start_scan = bytearray.fromhex('01')
     stop_scan = bytearray.fromhex('02')
@@ -77,8 +57,76 @@ def scan(port_name, timeout):
     if (len(raw_data) == 0):
         print("not good friend...")
     else:
+        return recordBots(raw_data)
 
 
-        return raw_data
+def hex_string_to_ascii(hex_string):
+    bytes_obj = binascii.unhexlify(hex_string)
+    return bytes_obj.decode('ascii', errors='ignore')
 
-print(scan("COM5", 2))
+def recordBots(data):
+    bots = {}
+    recordBot = True
+    atChar = 0
+    maxChar = len(data)
+    atByte = ""
+    atIntByte = 0
+    name_length = 0
+    macType = ""
+    macAddress = ""
+    name = ""
+    print(data)
+    while (atChar < maxChar):
+        if (recordBot and data[atChar] == "0" and data[atChar + 1] == "0"):
+            recordBot = False
+            atChar += 2
+            continue
+        if (name_length == 0):
+            atByte = data[atChar:atChar+2]
+            atIntByte = int((atByte), 16)
+            name_length = atIntByte - 7
+            atByte = ""
+            atIntByte = 0
+            atChar += 2
+            continue
+        if (macType == ""):
+            macType = data[atChar:atChar + 2]
+            atChar += 2
+            continue
+        if macAddress == "":
+            macAddress = data[atChar:atChar+12]
+            atChar+=12
+            continue
+        if name == "":
+            name = data[atChar:(atChar + name_length * 2)]
+            name = hex_string_to_ascii(name)
+            atChar += name_length * 2
+            temp = [macType, macAddress]
+            if (not (name in bots.keys())):
+                bots[name] = temp
+            temp = None
+            atByte = ""
+            atIntByte = 0
+            name_length = 0
+            macType = ""
+            
+            macAddress = ""
+            name = ""
+            recordBot = True
+    return bots
+
+def print_ports(): # prints a list of port
+    ports = []
+    for i in range(256):
+        ports.append("COM" + str(i)) 
+    result = []
+
+    for port_name in ports:
+        try:
+            serial_port = Serial(port_name)
+            serial_port.close()
+            result.append(port_name)
+        except:
+            pass
+    print(result)
+
