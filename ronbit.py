@@ -63,7 +63,6 @@ def scan(port_name, timeout = 2):
     else:
         return recordBots(raw_data)
 
-
 def hex_string_to_ascii(hex_string):
     bytes_obj = binascii.unhexlify(hex_string)
     return bytes_obj.decode('ascii', errors='ignore')
