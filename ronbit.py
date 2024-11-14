@@ -6,9 +6,9 @@ class ronbit:
     def __init__(self):
         # define a start variables
         self.name = ""
-        self.name_length = ""
         self.mac_type = ""
         self.mac_address = ""
+        self.connected = False
 
         # define port variable for connecting to serial device
         self.port_name = ""
@@ -24,14 +24,17 @@ class ronbit:
 
     def connect(self, name, timeout=2):
         discovered_bots = scan(self.port_name, timeout)
-        if (name in discovered_bots.keys()):
-            pass
-        else:
+        if not (name in discovered_bots.keys()):
             print("Error: ronbit not found :(")
             return
+        mac_info = discovered_bots[name]
+
+        self.name = name
+        self.mac_type = mac_info[0]
+        self.mac_address = mac_info[1]
+        self.connected = True
         
-
-
+        
 
 
 def scan(port_name, timeout = 2):
@@ -51,6 +54,7 @@ def scan(port_name, timeout = 2):
         serial_port.write(stop_scan)
     except:
         print("poop doopy fart")
+        return
 
     # hex_message = hex_please(raw_data)
 
