@@ -32,7 +32,33 @@ class ronbit:
         self.name = name
         self.mac_type = mac_info[0]
         self.mac_address = mac_info[1]
+
+        start_time = time.time()
+        raw_data = ""
+
+        try:
+            serial_port = Serial(self.port_name)
+            serial_port.write(bytearray.fromhex('03' + "07" + self.mac_type + self.mac_address))
+            while (time.time() - start_time <= timeout):
+                if serial_port.in_waiting > 0:
+                    data = serial_port.read(1)
+                    raw_data += data.hex()
+
+            if raw_data == "0309636f6e6e65637465640206ee80a927fd84":
+                raise IOError            
+
+            serial_port.close()
+        except:
+            print("Error: failed to connect to robot")
+            return
+        
+        print(raw_data)
+
+
+
         self.connected = True
+        
+        
         
         
 
@@ -41,7 +67,6 @@ def scan(port_name, timeout = 2):
     start_time = time.time()
     start_scan = bytearray.fromhex('01')
     stop_scan = bytearray.fromhex('02')
-    bots = []
     raw_data = ""
     try:
         serial_port = Serial(port_name)
@@ -69,53 +94,25 @@ def hex_string_to_ascii(hex_string):
 
 def recordBots(data):
     bots = {}
-    recordBot = True
-    atChar = 0
-    maxChar = len(data)
-    atByte = ""
-    atIntByte = 0
     name_length = 0
-    macType = ""
-    macAddress = ""
     name = ""
-    print(data)
-    while (atChar < maxChar):
-        if (recordBot and data[atChar] == "0" and data[atChar + 1] == "0"):
-            recordBot = False
-            atChar += 2
-            continue
-        if (name_length == 0):
-            atByte = data[atChar:atChar+2]
-            atIntByte = int((atByte), 16)
-            name_length = atIntByte - 7
-            atByte = ""
-            atIntByte = 0
-            atChar += 2
-            continue
-        if (macType == ""):
-            macType = data[atChar:atChar + 2]
-            atChar += 2
-            continue
-        if macAddress == "":
-            macAddress = data[atChar:atChar+12]
-            atChar+=12
-            continue
-        if name == "":
-            name = data[atChar:(atChar + name_length * 2)]
-            name = hex_string_to_ascii(name)
-            atChar += name_length * 2
-            temp = [macType, macAddress]
-            if (not (name in bots.keys())):
-                bots[name] = temp
-            temp = None
-            atByte = ""
-            atIntByte = 0
-            name_length = 0
-            macType = ""
-            
-            macAddress = ""
-            name = ""
-            recordBot = True
+    while len(data):
+        #trim first 2 chars because useless
+        data = data[2:]
+        
+        name_length = int((data[:2]), 16) - 7
+        data = data[2:]
+        
+        mac_type = data[:2]
+        data = data[2:]
+        
+        mac_address = data[:12]
+        data = data[12:]
+        
+        name = hex_string_to_ascii(data[:(name_length * 2)])
+        data = data[(name_length * 2):]
+        
+        bots[name] = [mac_type, mac_address]
     return bots
 
 def print_ports(): # prints a list of port
@@ -132,4 +129,3 @@ def print_ports(): # prints a list of port
         except:
             pass
     print(result)
-
