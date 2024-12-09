@@ -23,7 +23,7 @@ class ronbit:
             print(f"Error: can not connect to port: {port_name}")
 
     def connect(self, name, timeout=2):
-        discovered_bots = scan(self.port_name, timeout)
+        discovered_bots = check_bots(self.port_name, timeout)
         if not (name in discovered_bots.keys()):
             print("Error: ronbit not found :(")
             return
@@ -57,13 +57,16 @@ class ronbit:
 
 
         self.connected = True
-        
-        
-        
-        
+
+    def disconnect(self):
+        bytesStr = "03"
+        packet = "04" + self.mac_type + bytesStr + "010700"
+        serial_port = Serial(self.port_name)
+        serial_port.write(bytearray.fromhex(packet))
+        serial_port.close()
 
 
-def scan(port_name, timeout = 2):
+def check_bots(port_name, timeout = 2):
     start_time = time.time()
     start_scan = bytearray.fromhex('01')
     stop_scan = bytearray.fromhex('02')
@@ -77,14 +80,16 @@ def scan(port_name, timeout = 2):
                 raw_data += data.hex()
 
         serial_port.write(stop_scan)
+        serial_port.close()
     except:
-        print("poop doopy fart")
+        print("Unfortunately, th")
         return
 
     # hex_message = hex_please(raw_data)
 
     if (len(raw_data) == 0):
         print("not good friend...")
+        return {}
     else:
         return recordBots(raw_data)
 
